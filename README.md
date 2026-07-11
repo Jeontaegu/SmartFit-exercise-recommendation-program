@@ -143,6 +143,7 @@ Front-end: HTML5, Tailwind CSS (CDN), Vanilla JavaScript (ES6+)
 또는 다음과 같이 가벼운 로컬 개발 서버를 실행하여 스마트폰에서 실시간 테스트 환경을 구성할 수 있습니다:
 
 ##스크린샷
+
 <img width="586" height="917" alt="스크린샷 2026-07-11 162639" src="https://github.com/user-attachments/assets/b05a4869-9004-4e64-a2b0-46530616627e" />
 <img width="575" height="905" alt="스크린샷 2026-07-11 162656" src="https://github.com/user-attachments/assets/428cec8a-173c-41da-b755-286cc78578e2" />
 <img width="557" height="900" alt="스크린샷 2026-07-11 162707" src="https://github.com/user-attachments/assets/1efbb096-b2bf-4eb1-9a78-b40f2ddb6937" />
