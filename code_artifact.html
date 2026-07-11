@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFit - 맞춤 운동 추천</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        },
+                        darkBg: '#0f172a',
+                        darkCard: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Mobile scrollbar hiding and custom touch enhancements */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- App Container -->
+    <div class="w-full max-w-md mx-auto bg-slate-900 min-h-screen flex flex-col pb-24 shadow-2xl relative">
+        
+        <!-- Header -->
+        <header class="bg-slate-800 border-b border-slate-700 px-5 py-4 sticky top-0 z-40 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="bg-brand-500 p-1.5 rounded-lg text-slate-900">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-black tracking-tight text-white flex items-center">
+                        Smart<span class="text-brand-500">Fit</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">나만을 위한 컨디션 기반 처방</p>
+                </div>
+            </div>
+            <div class="flex space-x-1.5">
+                <!-- Preset Helper Dropdown -->
+                <button onclick="togglePresetMenu()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 py-1.5 px-2.5 rounded-lg font-medium flex items-center space-x-1 transition">
+                    <span>💡 테스트 프리셋</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Preset Dropsown Layer -->
+        <div id="presetMenu" class="hidden absolute top-16 left-0 right-0 mx-4 bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-2xl z-50 space-y-2">
+            <h4 class="text-sm font-bold text-slate-200 mb-2">원하는 시나리오를 선택해 테스트해보세요!</h4>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="applyPreset('excellent')" class="text-left text-xs bg-slate-700 hover:bg-slate-600 p-2.5 rounded-lg transition">
+                    <p class="font-bold text-emerald-400">🔥 컨디션 최상</p>
+                    <p class="text-[10px] text-slate-400">수면충분/심박안정</p>
+                </button>
+                <button onclick="applyPreset('tired')" class="text-left text-xs bg-slate-700 hover:bg-slate-600 p-2.5 rounded-lg transition">
+                    <p class="font-bold text-amber-400">🥱 수면 부족 피로</p>
+                    <p class="text-[10px] text-slate-400">수면 4시간/두통주의</p>
+                </button>
+                <button onclick="applyPreset('hypertension')" class="text-left text-xs bg-slate-700 hover:bg-slate-600 p-2.5 rounded-lg transition">
+                    <p class="font-bold text-red-400">⚠️ 고혈압 주의</p>
+                    <p class="text-[10px] text-slate-400">수축기 혈압 145</p>
+                </button>
+                <button onclick="applyPreset('danger')" class="text-left text-xs bg-slate-700 hover:bg-slate-600 p-2.5 rounded-lg transition">
+                    <p class="font-bold text-purple-400">🚨 산소 부족 위험</p>
+                    <p class="text-[10px] text-slate-400">SpO2 93% / 전신휴식</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-5 overflow-y-auto">
+            
+            <!-- SECTION 1: 운동 설정 및 목적 (Always Visible in Dashboard / Settings Tab) -->
+            <section id="section-goals" class="tab-content space-y-5">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <span class="p-1.5 bg-brand-500/10 text-brand-500 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        </span>
+                        <h2 class="text-base font-bold text-white">1. 운동 목적 & 장소 설정</h2>
+                    </div>
+
+                    <!-- Workout Goal Selector -->
+                    <div class="space-y-3">
+                        <label class="text-xs text-slate-400 font-medium block">추천받고자 하는 운동 목적</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center justify-between p-3 rounded-xl border bg-slate-700/40 border-slate-600 cursor-pointer hover:bg-slate-700 transition" id="label-goal-diet">
+                                <span class="text-xs font-semibold text-slate-200">🔥 다이어트</span>
+                                <input type="radio" name="goal" value="diet" checked class="hidden" onchange="updateGoalSelection()">
+                                <span class="w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center" id="radio-diet">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-brand-500 hidden" id="radio-dot-diet"></span>
+                                </span>
+                            </label>
+                            <label class="flex items-center justify-between p-3 rounded-xl border bg-slate-700/40 border-slate-600 cursor-pointer hover:bg-slate-700 transition" id="label-goal-muscle">
+                                <span class="text-xs font-semibold text-slate-200">💪 근육 증량</span>
+                                <input type="radio" name="goal" value="muscle" class="hidden" onchange="updateGoalSelection()">
+                                <span class="w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center" id="radio-muscle">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-brand-500 hidden" id="radio-dot-muscle"></span>
+                                </span>
+                            </label>
+                            <label class="flex items-center justify-between p-3 rounded-xl border bg-slate-700/40 border-slate-600 cursor-pointer hover:bg-slate-700 transition" id="label-goal-stamina">
+                                <span class="text-xs font-semibold text-slate-200">⚡ 체력 증진</span>
+                                <input type="radio" name="goal" value="stamina" class="hidden" onchange="updateGoalSelection()">
+                                <span class="w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center" id="radio-stamina">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-brand-500 hidden" id="radio-dot-stamina"></span>
+                                </span>
+                            </label>
+                            <label class="flex items-center justify-between p-3 rounded-xl border bg-slate-700/40 border-slate-600 cursor-pointer hover:bg-slate-700 transition" id="label-goal-rehab">
+                                <span class="text-xs font-semibold text-slate-200">🧘 통증/재활</span>
+                                <input type="radio" name="goal" value="rehab" class="hidden" onchange="updateGoalSelection()">
+                                <span class="w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center" id="radio-rehab">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-brand-500 hidden" id="radio-dot-rehab"></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Workout Place Preference -->
+                    <div class="mt-4 space-y-3">
+                        <label class="text-xs text-slate-400 font-medium block">선호하는 운동 환경</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setPlace('all')" id="btn-place-all" class="text-xs bg-brand-500 text-slate-900 font-bold py-2 px-3 rounded-xl border border-brand-600 transition">전체</button>
+                            <button onclick="setPlace('home')" id="btn-place-home" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 py-2 px-3 rounded-xl border border-slate-600 transition">홈트맨몸</button>
+                            <button onclick="setPlace('gym')" id="btn-place-gym" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 py-2 px-3 rounded-xl border border-slate-600 transition">헬스장기구</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exclusions & Joint Protection Filter -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <span class="p-1.5 bg-red-500/10 text-red-400 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </span>
+                        <h2 class="text-base font-bold text-white">제외하고 싶은 불편한 신체 부위</h2>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-3">선택한 부위에 무리가 가는 운동은 추천 목록에서 완전히 안전하게 차단됩니다.</p>
+                    
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="toggleExclusion('knee')" id="ex-knee" class="text-xs font-semibold py-2 px-1 rounded-xl border border-slate-600 bg-slate-700/30 text-slate-300 transition">🦵 무릎</button>
+                        <button onclick="toggleExclusion('waist')" id="ex-waist" class="text-xs font-semibold py-2 px-1 rounded-xl border border-slate-600 bg-slate-700/30 text-slate-300 transition">🧍 허리/척추</button>
+                        <button onclick="toggleExclusion('shoulder')" id="ex-shoulder" class="text-xs font-semibold py-2 px-1 rounded-xl border border-slate-600 bg-slate-700/30 text-slate-300 transition">💪 어깨</button>
+                        <button onclick="toggleExclusion('wrist')" id="ex-wrist" class="text-xs font-semibold py-2 px-1 rounded-xl border border-slate-600 bg-slate-700/30 text-slate-300 transition">🤚 손목</button>
+                        <button onclick="toggleExclusion('ankle')" id="ex-ankle" class="text-xs font-semibold py-2 px-1 rounded-xl border border-slate-600 bg-slate-700/30 text-slate-300 transition">🦶 발목</button>
+                        <button onclick="toggleExclusion('neck')" id="ex-neck" class="text-xs font-semibold py-2 px-1 rounded-xl border border-slate-600 bg-slate-700/30 text-slate-300 transition">👤 목</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: 신체 정보 (Monthly - 인바디) -->
+            <section id="section-body" class="tab-content hidden space-y-5">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="p-1.5 bg-brand-500/10 text-brand-500 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </span>
+                            <h2 class="text-base font-bold text-white">신체 및 인바디 데이터 <span class="text-xs font-normal text-slate-400">(월 1회 권장)</span></h2>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">키 (cm)</label>
+                                <input type="number" id="in-height" value="175" oninput="calculateBMI()" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">몸무게 (kg)</label>
+                                <input type="number" id="in-weight" value="72" oninput="calculateBMI()" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">골격근량 (kg)</label>
+                                <input type="number" id="in-muscle" value="32.5" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">체지방량 (kg)</label>
+                                <input type="number" id="in-fat-mass" value="14.2" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">체지방률 (%)</label>
+                                <input type="number" id="in-fat-percent" value="19.7" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">BMI 지수 <span class="text-[10px] text-brand-400">(자동 계산)</span></label>
+                                <input type="number" id="in-bmi" value="23.5" readonly class="w-full bg-slate-800 text-slate-300 rounded-xl py-2.5 px-3 border border-slate-700 text-sm focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Visual Inbody Card Analyzer -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg space-y-4">
+                    <h3 class="text-sm font-bold text-slate-200">📊 나의 신체 요약 분석</h3>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-400">비만도 분석 (BMI)</span>
+                                <span id="bmi-status" class="font-bold text-brand-400">과체중 경계</span>
+                            </div>
+                            <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                                <div id="bmi-bar" class="bg-brand-500 h-full rounded-full transition-all duration-500" style="width: 65%;"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-400">골격근량 대비 지방 균형</span>
+                                <span id="balance-status" class="font-bold text-amber-400">표준</span>
+                            </div>
+                            <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                                <div id="balance-bar" class="bg-amber-500 h-full rounded-full transition-all duration-500" style="width: 55%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 생체 정보 입력 (Daily - 매일 아침) -->
+            <section id="section-daily" class="tab-content hidden space-y-5">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <span class="p-1.5 bg-red-500/10 text-red-500 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        </span>
+                        <h2 class="text-base font-bold text-white">매일 아침 생체 데이터 입력</h2>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Heart Rate -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <label class="text-slate-400 font-medium">휴식기 심박수 (BPM)</label>
+                                <span class="text-slate-500">정상범위: 60 - 85</span>
+                            </div>
+                            <input type="number" id="daily-heart" value="72" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                        </div>
+
+                        <!-- Blood Pressure -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <label class="text-slate-400 font-medium">혈압 (수축기 / 이완기)</label>
+                                <span class="text-slate-500">정상: 120 / 80 미만</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="number" id="daily-bp-sys" value="118" placeholder="최고 (수축기)" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                                <input type="number" id="daily-bp-dia" value="78" placeholder="최저 (이완기)" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                            </div>
+                        </div>
+
+                        <!-- SpO2 & Sleep Respiration -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">혈중 산소포화도 (%)</label>
+                                <input type="number" id="daily-spo2" value="98" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">수면 평균 호흡수 (회/분)</label>
+                                <input type="number" id="daily-resp" value="16" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                            </div>
+                        </div>
+
+                        <!-- Sleep Duration -->
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">수면 시간 (시간)</label>
+                            <input type="number" step="0.5" id="daily-sleep" value="7.5" class="w-full bg-slate-700 text-white rounded-xl py-2.5 px-3 border border-slate-600 text-sm focus:outline-none focus:border-brand-500 transition">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex items-center space-x-3">
+                    <div class="text-yellow-400 p-2 bg-yellow-400/10 rounded-xl">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">매일 아침 측정한 스마트워치나 헬스케어 기기의 생체 데이터를 입력하면 더 상세한 당일 맞춤 관리가 작동합니다.</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 운동 처방 및 추천 결과 (Workout Recommendation Panel) -->
+            <section id="section-recommend" class="tab-content hidden space-y-5">
+                
+                <!-- Today's Score Header Card -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg text-center relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-28 h-28 bg-brand-500/10 rounded-full blur-xl"></div>
+                    <div class="absolute -bottom-10 -left-10 w-28 h-28 bg-blue-500/10 rounded-full blur-xl"></div>
+                    
+                    <span class="text-xs text-brand-400 font-bold tracking-wider uppercase bg-brand-500/10 px-3 py-1 rounded-full">당일 생체 매트릭스 계산기</span>
+                    
+                    <div class="my-5 flex flex-col items-center">
+                        <div class="relative flex items-center justify-center">
+                            <!-- Circular Progress Simulation -->
+                            <div class="w-32 h-32 rounded-full border-4 border-slate-700 flex flex-col items-center justify-center relative">
+                                <span id="rec-score-num" class="text-4xl font-extrabold text-white">92</span>
+                                <span class="text-[10px] text-slate-400">컨디션 점수</span>
+                                <div id="score-ring-color" class="absolute inset-0 rounded-full border-4 border-brand-500 scale-100 transition-all duration-700 pointer-events-none"></div>
+                            </div>
+                        </div>
+                        <h3 id="rec-score-text" class="text-lg font-black text-brand-400 mt-4">🔥 최상의 신체 밸런스</h3>
+                    </div>
+
+                    <!-- Recommended Time Indicator -->
+                    <div class="grid grid-cols-2 gap-3 border-t border-slate-700 pt-4 mt-2">
+                        <div>
+                            <p class="text-[10px] text-slate-400">추천 운동 강도</p>
+                            <p id="rec-intensity-badge" class="text-sm font-black text-emerald-400 mt-0.5">상 (High)</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400">추천 운동 시간</p>
+                            <p id="rec-duration-badge" class="text-sm font-black text-white mt-0.5">50 - 60 분</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coach Special Memo & Guidance -->
+                <div class="bg-gradient-to-r from-slate-800 to-slate-850 border border-slate-700 rounded-2xl p-5 shadow-md">
+                    <div class="flex items-center space-x-2.5 mb-3">
+                        <span class="text-xl">📋</span>
+                        <h4 class="text-sm font-bold text-slate-200">스마트 피트니스 코치 AI 분석 리포트</h4>
+                    </div>
+                    <p id="rec-coach-memo" class="text-xs text-slate-300 leading-relaxed">
+                        수면시간과 혈중 산소농도가 아주 훌륭합니다. 심폐와 신체의 전반적인 활성 수준이 최고 단계이므로, 선택하신 [근육 증량] 목적을 위한 안전한 중-고강도 세션을 충분히 소화할 수 있습니다!
+                    </p>
+                </div>
+
+                <!-- Final Personalized Workouts List -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-white flex items-center space-x-1.5">
+                            <span>🎯 오늘의 맞춤 필터링 운동 구성</span>
+                            <span id="filtered-count" class="bg-brand-500/20 text-brand-400 text-[10px] font-bold px-2 py-0.5 rounded-full">5개</span>
+                        </h3>
+                    </div>
+
+                    <!-- Workouts List Container -->
+                    <div id="workouts-list" class="space-y-3">
+                        <!-- Dynamic Item Sample -->
+                        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex items-start space-x-3">
+                            <div class="bg-slate-700 p-2.5 rounded-xl text-slate-300">⚡</div>
+                            <div class="flex-1">
+                                <div class="flex justify-between">
+                                    <h4 class="text-sm font-bold text-white">스쿼트</h4>
+                                    <span class="text-[10px] bg-brand-500/10 text-brand-400 px-2 py-0.5 rounded-full font-bold">맨몸/하체</span>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">대퇴사두근과 둔근을 타격하는 최고의 전신 하체 운동</p>
+                                <div class="mt-2.5 flex space-x-2">
+                                    <span class="text-[10px] text-slate-400 bg-slate-900 px-2 py-1 rounded">강도: 중</span>
+                                    <span class="text-[10px] text-slate-400 bg-slate-900 px-2 py-1 rounded">관절 위험성: 무릎</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- Bottom Navigation Bar for Mobile Feel -->
+        <nav class="absolute bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 h-16 flex items-center justify-around px-2 z-40">
+            <button onclick="switchTab('goals')" id="tab-btn-goals" class="flex flex-col items-center justify-center flex-1 h-full text-brand-500 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span class="text-[10px] font-bold mt-1">설정/목적</span>
+            </button>
+
+            <button onclick="switchTab('body')" id="tab-btn-body" class="flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
+                </svg>
+                <span class="text-[10px] font-bold mt-1">인바디(월)</span>
+            </button>
+
+            <button onclick="switchTab('daily')" id="tab-btn-daily" class="flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-white transition-colors relative">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <span class="text-[10px] font-bold mt-1">생체(일)</span>
+                <!-- Pulse Dot indicating daily activity -->
+                <span class="absolute top-2 right-6 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            </button>
+
+            <button onclick="switchTab('recommend')" id="tab-btn-recommend" class="flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+                <span class="text-[10px] font-bold mt-1">추천운동</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Workout Recommendation Algorithm Javascript -->
+    <script>
+        // Master Database of available workouts with tags for filters and condition level mapping
+        const workoutDatabase = [
+            { id: 1, name: "맨몸 풀 스쿼트 (Squat)", category: "하체", place: "home", avoid: ["knee", "ankle"], intensity: "High", desc: "대둔근과 대퇴사두근을 발달시키는 최고의 고강도 하체 이완/수축 맨몸 운동" },
+            { id: 2, name: "바벨 스쿼트 (Barbell Squat)", category: "하체", place: "gym", avoid: ["knee", "waist", "ankle"], intensity: "High", desc: "무거운 외력을 통해 하체 볼륨과 코어를 극한으로 발달시키는 고중량 훈련" },
+            { id: 3, name: "레그 익스텐션 (Leg Extension)", category: "하체", place: "gym", avoid: ["knee"], intensity: "Medium", desc: "무릎 전단력을 컨트롤하며 대퇴사두근 상단을 고립하여 단련하는 하체 기구 운동" },
+            { id: 4, name: "플랭크 홀드 (Plank Hold)", category: "코어", place: "home", avoid: ["shoulder", "wrist"], intensity: "Medium", desc: "척추를 중립 상태로 고정시켜 복강 내압과 코어 전체의 등척성 지구력을 기르는 안정성 루틴" },
+            { id: 5, name: "버드독 코어 안정화 (Bird-dog)", category: "코어/재활", place: "home", avoid: [], intensity: "Low", desc: "허리 통증 예방 및 요추 중립 정렬을 극대화시키는 초보자 및 재활 최적화 세션" },
+            { id: 6, name: "정석 푸쉬업 (Push-Up)", category: "가슴", place: "home", avoid: ["shoulder", "wrist"], intensity: "Medium", desc: "가슴, 어깨 전면, 삼두근을 전체적으로 자극하며 상체 프레임을 견고히 하는 맨몸 훈련" },
+            { id: 7, name: "체스트 프레스 머신 (Chest Press)", category: "가슴", place: "gym", avoid: ["shoulder"], intensity: "Medium", desc: "일정한 안전 궤적으로 덤벨보다 어깨 부상 위험을 크게 차단해 가슴 볼륨을 키우는 머신" },
+            { id: 8, name: "루마니안 데드리프트 (Deadlift)", category: "등/전신", place: "gym", avoid: ["waist", "knee", "wrist"], intensity: "High", desc: "척추기립근과 둔근, 햄스트링을 견고하게 수축시켜 등 판과 하체 뒷면을 넓혀주는 운동" },
+            { id: 9, name: "암 워킹 코어 (Arm Walking)", category: "전신", place: "home", avoid: ["wrist", "shoulder"], intensity: "High", desc: "움직임을 통제하며 온몸의 협동력과 칼로리 소모를 끌어내는 다이어트 전용 하이브리드 맨몸 운동" },
+            { id: 10, name: "실내 자전거 (Stationary Bike)", category: "유산소", place: "gym", avoid: [], intensity: "Low", desc: "체중 부하를 가하지 않고 페달링 회전으로 유산소 대사를 활성화하는 관절 보호 운동" },
+            { id: 11, name: "조깅 러닝머신 (Treadmill)", category: "유산소", place: "gym", avoid: ["knee", "ankle"], intensity: "Medium", desc: "가벼운 페이스로 유산소 역치를 자극하며 전신의 심폐 기능과 스태미너를 올리는 조깅" },
+            { id: 12, name: "케이블 랫 풀 다운 (Lat Pulldown)", category: "등", place: "gym", avoid: ["shoulder", "neck"], intensity: "Medium", desc: "허리에 부담을 전혀 주지 않으면서 등 광배근을 인장하고 펴주는 헬스장 인기 기구 운동" },
+            { id: 13, name: "요가 고양이-소 자세 (Cat-Cow)", category: "재활/스트레칭", place: "home", avoid: [], intensity: "Low", desc: "척추 마디마디를 이완하여 신경 피로를 완화하고 어깨 결림과 요통을 진정시키는 스트레칭" },
+            { id: 14, name: "버피 테스트 (Burpee Test)", category: "전신", place: "home", avoid: ["wrist", "knee", "ankle"], intensity: "High", desc: "초고강도 유산소 및 근지구력 훈련으로 체지방을 급속 연소시키는 고효율 다이어트 운동" },
+            { id: 15, name: "덤벨 사이드 래터럴 레이즈 (Lateral Raise)", category: "어깨", place: "gym", avoid: ["shoulder", "neck"], intensity: "Medium", desc: "측면 삼각근을 고립시켜 어깨 가로 폭을 넓히며 회전근개 부하를 최소화하는 테크닉" },
+            { id: 16, name: "체어 딥스 (Chair Dips)", category: "팔/삼두", place: "home", avoid: ["shoulder", "wrist"], intensity: "Medium", desc: "의자를 활용해 상체 체중을 지탱하고 밀어올려 삼두근을 단련하는 맨몸 기능성 운동" }
+        ];
+
+        // Reactive Application State
+        let selectedGoal = "diet";
+        let excludedJoints = [];
+        let preferredPlace = "all"; // 'all', 'home', 'gym'
+        
+        // Setup initial tabs
+        window.onload = function() {
+            calculateBMI();
+            updateGoalSelection();
+            evaluateConditionAndRecommend();
+        }
+
+        // Tab Switch Control
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // Remove active classes from navigation
+            document.querySelectorAll('nav button').forEach(el => {
+                el.classList.remove('text-brand-500');
+                el.classList.add('text-slate-400');
+            });
+
+            // Show target tab
+            document.getElementById(`section-${tabId}`).classList.remove('hidden');
+            // Highlight active button
+            document.getElementById(`tab-btn-${tabId}`).classList.add('text-brand-500');
+            document.getElementById(`tab-btn-${tabId}`).classList.remove('text-slate-400');
+
+            // Instantly recalculate recommendations when user navigates to the recommendation tab
+            if (tabId === 'recommend') {
+                evaluateConditionAndRecommend();
+            }
+            
+            // Close preset helper menu
+            document.getElementById('presetMenu').classList.add('hidden');
+        }
+
+        // Toggle Preset Dropdown Helper Menu
+        function togglePresetMenu() {
+            const menu = document.getElementById('presetMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Preset Apply Controller (for quick & rich testing)
+        function applyPreset(presetType) {
+            switch(presetType) {
+                case 'excellent':
+                    document.getElementById('daily-heart').value = 65;
+                    document.getElementById('daily-bp-sys').value = 115;
+                    document.getElementById('daily-bp-dia').value = 75;
+                    document.getElementById('daily-spo2').value = 99;
+                    document.getElementById('daily-resp').value = 15;
+                    document.getElementById('daily-sleep').value = 8.5;
+                    break;
+                case 'tired':
+                    document.getElementById('daily-heart').value = 86;
+                    document.getElementById('daily-bp-sys').value = 125;
+                    document.getElementById('daily-bp-dia').value = 83;
+                    document.getElementById('daily-spo2').value = 96;
+                    document.getElementById('daily-resp').value = 19;
+                    document.getElementById('daily-sleep').value = 4.0;
+                    break;
+                case 'hypertension':
+                    document.getElementById('daily-heart').value = 82;
+                    document.getElementById('daily-bp-sys').value = 145; // Hypertension Warning triggered
+                    document.getElementById('daily-bp-dia').value = 92;
+                    document.getElementById('daily-spo2').value = 98;
+                    document.getElementById('daily-resp').value = 17;
+                    document.getElementById('daily-sleep').value = 6.5;
+                    break;
+                case 'danger':
+                    document.getElementById('daily-heart').value = 95;
+                    document.getElementById('daily-bp-sys').value = 135;
+                    document.getElementById('daily-bp-dia').value = 85;
+                    document.getElementById('daily-spo2').value = 92; // Low SpO2 Warning triggered
+                    document.getElementById('daily-resp').value = 22;
+                    document.getElementById('daily-sleep').value = 5.0;
+                    break;
+            }
+            document.getElementById('presetMenu').classList.add('hidden');
+            
+            // Redirect smoothly to recommendation to display updated output instantly
+            switchTab('recommend');
+        }
+
+        // Exclusions Selection Manager
+        function toggleExclusion(joint) {
+            const btn = document.getElementById(`ex-${joint}`);
+            if (excludedJoints.includes(joint)) {
+                excludedJoints = excludedJoints.filter(j => j !== joint);
+                btn.classList.remove('bg-red-500/20', 'border-red-500', 'text-red-400');
+                btn.classList.add('bg-slate-700/30', 'border-slate-600', 'text-slate-300');
+            } else {
+                excludedJoints.push(joint);
+                btn.classList.add('bg-red-500/20', 'border-red-500', 'text-red-400');
+                btn.classList.remove('bg-slate-700/30', 'border-slate-600', 'text-slate-300');
+            }
+        }
+
+        // Place Preference Selection
+        function setPlace(place) {
+            preferredPlace = place;
+            // Reset active styles for place buttons
+            const places = ['all', 'home', 'gym'];
+            places.forEach(p => {
+                const b = document.getElementById(`btn-place-${p}`);
+                if (p === place) {
+                    b.className = "text-xs bg-brand-500 text-slate-900 font-bold py-2 px-3 rounded-xl border border-brand-600 transition";
+                } else {
+                    b.className = "text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 py-2 px-3 rounded-xl border border-slate-600 transition";
+                }
+            });
+        }
+
+        // Goal Selection Sync
+        function updateGoalSelection() {
+            const selected = document.querySelector('input[name="goal"]:checked');
+            if (selected) {
+                selectedGoal = selected.value;
+                const goals = ['diet', 'muscle', 'stamina', 'rehab'];
+                goals.forEach(g => {
+                    const label = document.getElementById(`label-goal-${g}`);
+                    const dot = document.getElementById(`radio-dot-${g}`);
+                    const radio = document.getElementById(`radio-${g}`);
+                    if (g === selectedGoal) {
+                        label.classList.add('border-brand-500', 'bg-brand-500/5');
+                        dot.classList.remove('hidden');
+                        radio.classList.add('border-brand-500');
+                    } else {
+                        label.classList.remove('border-brand-500', 'bg-brand-500/5');
+                        dot.classList.add('hidden');
+                        radio.classList.remove('border-brand-500');
+                    }
+                });
+            }
+        }
+
+        // Inbody Analyzer - Calculate BMI and Dynamic visual analysis bars
+        function calculateBMI() {
+            const height = parseFloat(document.getElementById('in-height').value) || 0;
+            const weight = parseFloat(document.getElementById('in-weight').value) || 0;
+            
+            if (height > 0 && weight > 0) {
+                const bmi = (weight / ((height / 100) ** 2)).toFixed(1);
+                document.getElementById('in-bmi').value = bmi;
+
+                // BMI Gauge Analysis
+                const bmiBar = document.getElementById('bmi-bar');
+                const bmiStatus = document.getElementById('bmi-status');
+                
+                let bmiPercentage = (bmi / 40) * 100; // Cap visual scale at 40
+                if (bmiPercentage > 100) bmiPercentage = 100;
+                bmiBar.style.width = `${bmiPercentage}%`;
+
+                if (bmi < 18.5) {
+                    bmiStatus.innerText = "저체중 (신경 처방 요망)";
+                    bmiStatus.className = "font-bold text-blue-400 text-xs";
+                    bmiBar.className = "bg-blue-500 h-full rounded-full transition-all duration-500";
+                } else if (bmi >= 18.5 && bmi < 23) {
+                    bmiStatus.innerText = "정상 체중 (Excellent)";
+                    bmiStatus.className = "font-bold text-brand-400 text-xs";
+                    bmiBar.className = "bg-brand-500 h-full rounded-full transition-all duration-500";
+                } else if (bmi >= 23 && bmi < 25) {
+                    bmiStatus.innerText = "과체중 경계 (관찰 필요)";
+                    bmiStatus.className = "font-bold text-yellow-400 text-xs";
+                    bmiBar.className = "bg-yellow-500 h-full rounded-full transition-all duration-500";
+                } else {
+                    bmiStatus.innerText = "비만 (중등도 체지방 연소 추천)";
+                    bmiStatus.className = "font-bold text-red-400 text-xs";
+                    bmiBar.className = "bg-red-500 h-full rounded-full transition-all duration-500";
+                }
+            }
+
+            // Sync Muscle-Fat Balance Chart simulation
+            const muscle = parseFloat(document.getElementById('in-muscle').value) || 0;
+            const fatMass = parseFloat(document.getElementById('in-fat-mass').value) || 0;
+            if (muscle > 0 && fatMass > 0) {
+                const balanceBar = document.getElementById('balance-bar');
+                const balanceStatus = document.getElementById('balance-status');
+                const ratio = muscle / (fatMass + 0.1);
+
+                if (ratio > 2.2) {
+                    balanceStatus.innerText = "근육 발달형 탄탄형";
+                    balanceStatus.className = "font-bold text-brand-400 text-xs";
+                    balanceBar.style.width = "85%";
+                    balanceBar.className = "bg-brand-500 h-full rounded-full transition-all duration-500";
+                } else if (ratio >= 1.5 && ratio <= 2.2) {
+                    balanceStatus.innerText = "표준적인 대사 균형";
+                    balanceStatus.className = "font-bold text-slate-300 text-xs";
+                    balanceBar.style.width = "60%";
+                    balanceBar.className = "bg-blue-500 h-full rounded-full transition-all duration-500";
+                } else {
+                    balanceStatus.innerText = "지방 우세형 피로감 주의";
+                    balanceStatus.className = "font-bold text-amber-500 text-xs";
+                    balanceBar.style.width = "35%";
+                    balanceBar.className = "bg-amber-500 h-full rounded-full transition-all duration-500";
+                }
+            }
+        }
+
+        // MAIN ALGORITHM: Evaluates Daily Metrics & Generates dynamic workouts
+        function evaluateConditionAndRecommend() {
+            // Get Input Raw values
+            const hr = parseInt(document.getElementById('daily-heart').value) || 72;
+            const sys = parseInt(document.getElementById('daily-bp-sys').value) || 120;
+            const dia = parseInt(document.getElementById('daily-bp-dia').value) || 80;
+            const spo2 = parseInt(document.getElementById('daily-spo2').value) || 98;
+            const sleep = parseFloat(document.getElementById('daily-sleep').value) || 7;
+            const resp = parseInt(document.getElementById('daily-resp').value) || 16;
+
+            // 1. Fixed Baseline Assessment Scoring Logic
+            let conditionScore = 0;
+
+            // sleep component (max 25 pts)
+            if (sleep >= 7.5) conditionScore += 25;
+            else if (sleep >= 6.5) conditionScore += 20;
+            else if (sleep >= 5.5) conditionScore += 10;
+            else conditionScore -= 5; // Sleep deprivation penalty
+
+            // Heart rate component (max 25 pts)
+            if (hr >= 60 && hr <= 75) conditionScore += 25;
+            else if (hr > 75 && hr <= 85) conditionScore += 18;
+            else if (hr > 85 && hr <= 95) conditionScore += 8;
+            else conditionScore += 2; // Arrythmia / extreme exhaustion penalty
+
+            // BP component (max 25 pts)
+            if (sys <= 120 && dia <= 80) conditionScore += 25;
+            else if (sys < 135 && dia < 88) conditionScore += 18;
+            else if (sys >= 140 || dia >= 90) conditionScore -= 10; // Hypertension heavy warning
+            else conditionScore += 10;
+
+            // Oxygen SpO2 component (max 25 pts)
+            if (spo2 >= 98) conditionScore += 25;
+            else if (spo2 >= 95 && spo2 < 98) conditionScore += 15;
+            else conditionScore -= 20; // Critical hypoxia penalty
+
+            // Normalise boundaries (0 to 100)
+            if (conditionScore < 0) conditionScore = 0;
+            if (conditionScore > 100) conditionScore = 100;
+
+            // Apply condition rating & styling
+            const scoreNumEl = document.getElementById('rec-score-num');
+            const scoreTextEl = document.getElementById('rec-score-text');
+            const intensityBadge = document.getElementById('rec-intensity-badge');
+            const durationBadge = document.getElementById('rec-duration-badge');
+            const coachMemo = document.getElementById('rec-coach-memo');
+            const ringColor = document.getElementById('score-ring-color');
+
+            scoreNumEl.innerText = conditionScore;
+
+            let finalCondition = "Good"; // 'Excellent', 'Good', 'Tired', 'Warning', 'Danger'
+            let allowedIntensity = ["Low", "Medium", "High"];
+            let recommendedDuration = "";
+            let memo = "";
+
+            // Dynamic evaluation based on condition thresholds
+            if (conditionScore >= 85) {
+                finalCondition = "Excellent";
+                scoreTextEl.innerText = "🔥 최고의 에너지 상태 (컨디션 최상)";
+                scoreTextEl.className = "text-lg font-black text-emerald-400 mt-4";
+                ringColor.className = "absolute inset-0 rounded-full border-4 border-emerald-500 scale-100 transition-all duration-700 pointer-events-none";
+                intensityBadge.innerText = "상 (High) 권장";
+                intensityBadge.className = "text-sm font-black text-emerald-400 mt-0.5";
+                recommendedDuration = "50 - 70 분";
+                memo = "심폐 활성화 레벨과 산소 순환이 최고 수준입니다. 목표로 삼으신 목적을 향해 최대 강도의 운동과 기량 향상을 꾀할 수 있는 최적의 타이밍입니다. 지체없이 본 훈련에 참여해 보세요!";
+            } else if (conditionScore >= 60 && conditionScore < 85) {
+                finalCondition = "Good";
+                scoreTextEl.innerText = "✅ 안전하고 완벽한 일상 루틴 (양호)";
+                scoreTextEl.className = "text-lg font-black text-brand-400 mt-4";
+                ringColor.className = "absolute inset-0 rounded-full border-4 border-brand-500 scale-100 transition-all duration-700 pointer-events-none";
+                intensityBadge.innerText = "중-상 (Medium - High)";
+                intensityBadge.className = "text-sm font-black text-brand-400 mt-0.5";
+                recommendedDuration = "40 - 55 분";
+                memo = "수면과 혈압 밸런스가 조화롭습니다. 급성 부상 우려 없이 무난하게 일반적인 본 루틴을 소화할 수 있는 안전한 신체 기저 상태입니다.";
+            } else if (conditionScore >= 40 && conditionScore < 60) {
+                finalCondition = "Tired";
+                scoreTextEl.innerText = "🥱 피로 축적 및 주의 요망 (컨디션 저하)";
+                scoreTextEl.className = "text-lg font-black text-yellow-400 mt-4";
+                ringColor.className = "absolute inset-0 rounded-full border-4 border-yellow-500 scale-100 transition-all duration-700 pointer-events-none";
+                intensityBadge.innerText = "중-하 (Low - Medium)";
+                intensityBadge.className = "text-sm font-black text-yellow-400 mt-0.5";
+                recommendedDuration = "30 - 40 분";
+                allowedIntensity = ["Low", "Medium"]; // Filter out high intensity
+                memo = "피로도가 감지됩니다(특히 수면 시간 및 자율신경계 저하). 고강도 근력 리프팅은 관절 손상을 야기할 우려가 크므로 피하고, 타겟 근육 고립이나 가벼운 템포 조깅으로 가볍게 피를 순환시키는 것을 권합니다.";
+            } else if (conditionScore >= 20 && conditionScore < 40) {
+                finalCondition = "Warning";
+                scoreTextEl.innerText = "⚠️ 초고도 누적 피로 (수면장애/혈압상승)";
+                scoreTextEl.className = "text-lg font-black text-amber-500 mt-4";
+                ringColor.className = "absolute inset-0 rounded-full border-4 border-amber-500 scale-100 transition-all duration-700 pointer-events-none";
+                intensityBadge.innerText = "하 (Low Intensity Only)";
+                intensityBadge.className = "text-sm font-black text-amber-500 mt-0.5";
+                recommendedDuration = "20 - 30 분";
+                allowedIntensity = ["Low"]; // Low intensity only
+                memo = "심혈관 스트레스가 매우 높거나 수면 부족 상태가 위험 구간입니다. 무리한 고강도 및 스쿼트, 데드리프트 같은 발살바 호흡 압박 운동은 금기대상입니다. 가벼운 회복용 유산소와 척추 이완 요가로 스트레스 지수를 내리는데 초점을 잡으세요.";
+            } else {
+                finalCondition = "Danger";
+                scoreTextEl.innerText = "🚨 심각한 바이탈 경고 (안정 휴식 강력 권장)";
+                scoreTextEl.className = "text-lg font-black text-red-500 mt-4";
+                ringColor.className = "absolute inset-0 rounded-full border-4 border-red-500 scale-100 transition-all duration-700 pointer-events-none";
+                intensityBadge.innerText = "운동 제한 / 스트레칭만 가능";
+                intensityBadge.className = "text-sm font-black text-red-500 mt-0.5";
+                recommendedDuration = "15 - 20 분 미만";
+                allowedIntensity = ["Low"];
+                memo = "혈중 산소수치가 현격히 낮거나 극도의 신체 마비감/정상 수면 이탈이 발견됩니다. 무거운 가중치를 다루거나 땀이 흥건히 젖는 스포츠는 오히려 교감신경을 망가트립니다. 가벼운 정적 유연성 운동만 수행하거나, 완전한 휴식을 강권합니다.";
+            }
+
+            // High Blood Pressure exclusion safeguard override
+            const isHighBP = (sys >= 140 || dia >= 90);
+            if (isHighBP) {
+                memo += " [🔥 긴급 경고: 수축기 또는 이완기 혈압이 과도하여 급성 혈관 압박 위험이 있습니다. 머리가 아래로 쏠리거나 숨을 오랫동안 참는 파워 리프팅, 고하중 운동은 오늘 리스트에서 제외되었습니다.]";
+            }
+
+            coachMemo.innerText = memo;
+            durationBadge.innerText = recommendedDuration;
+
+            // 2. WORKOUT DATABASE FILTERING
+            let filteredWorkouts = workoutDatabase.filter(w => {
+                // 1) Filter by Place Preference
+                if (preferredPlace !== "all" && w.place !== preferredPlace) {
+                    return false;
+                }
+
+                // 2) Filter by Joint Exclusions
+                const hasExcludedJoint = w.avoid.some(joint => excludedJoints.includes(joint));
+                if (hasExcludedJoint) {
+                    return false;
+                }
+
+                // 3) Filter by allowed intensity determined by condition score
+                if (!allowedIntensity.includes(w.intensity)) {
+                    return false;
+                }
+
+                // 4) High Blood Pressure safety safeguard override:
+                // If High BP, filter out heavy compound moves known for high-pressure strain
+                if (isHighBP && (w.name.includes("바벨 스쿼트") || w.name.includes("데드리프트"))) {
+                    return false;
+                }
+
+                // 5) Adjust based on Goal Profile (Optional prioritisation logic)
+                if (selectedGoal === 'rehab') {
+                    // Rehab users focus on Low or Medium workouts
+                    return w.intensity !== "High";
+                }
+
+                return true;
+            });
+
+            // If empty after too many filters, inject safe universal stretchers as contingency
+            if (filteredWorkouts.length === 0) {
+                filteredWorkouts = workoutDatabase.filter(w => w.intensity === "Low" && w.avoid.length === 0);
+            }
+
+            // Render Results to UI
+            const container = document.getElementById('workouts-list');
+            const countBadge = document.getElementById('filtered-count');
+            container.innerHTML = "";
+            countBadge.innerText = `${filteredWorkouts.length}개 조합`;
+
+            filteredWorkouts.forEach(w => {
+                let intensityColor = "text-slate-300 bg-slate-900";
+                if (w.intensity === "High") intensityColor = "text-red-400 bg-red-950/40 border border-red-900";
+                if (w.intensity === "Medium") intensityColor = "text-yellow-400 bg-yellow-950/40 border border-yellow-900";
+                if (w.intensity === "Low") intensityColor = "text-emerald-400 bg-emerald-950/40 border border-emerald-900";
+
+                const avoidLabelText = w.avoid.length > 0 ? `피해야 할 부위: ${w.avoid.map(av => {
+                    const trans = {knee: '무릎', waist: '허리', shoulder: '어깨', wrist: '손목', ankle: '발목', neck: '목'};
+                    return trans[av] || av;
+                }).join(', ')}` : "모든 관절에 안전함";
+
+                const cardHtml = `
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex items-start space-x-3 hover:border-slate-600 transition duration-200">
+                        <div class="bg-slate-700/60 text-xl p-2.5 rounded-xl text-slate-300 flex items-center justify-center w-11 h-11">
+                            ${w.category.includes("유산소") ? "🏃" : w.category.includes("재활") ? "🧘" : "💪"}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-center mb-1">
+                                <h4 class="text-sm font-bold text-white truncate mr-2">${w.name}</h4>
+                                <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full ${w.place === 'home' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-pink-500/10 text-pink-400 border border-pink-500/20'}">
+                                    ${w.place === 'home' ? '홈트' : '헬스장'}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-300 leading-relaxed">${w.desc}</p>
+                            
+                            <div class="mt-3 flex flex-wrap gap-1.5 items-center">
+                                <span class="text-[9px] px-2 py-0.5 rounded font-black ${intensityColor}">강도: ${w.intensity}</span>
+                                <span class="text-[9px] text-slate-400 bg-slate-900/60 px-2 py-0.5 rounded">${w.category}</span>
+                                <span class="text-[9px] ${w.avoid.length > 0 ? 'text-amber-400 bg-amber-950/20' : 'text-slate-400 bg-slate-900/60'} px-2 py-0.5 rounded">
+                                    ${avoidLabelText}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+    </script>
+</body>
+</html>
