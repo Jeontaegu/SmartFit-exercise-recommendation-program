@@ -4,6 +4,17 @@
 
 SmartFit은 모바일 사용자 환경(Mobile-first UI/UX)에 최적화된 하이브리드 운동 추천 웹 애플리케이션입니다. 사용자의 고정형 신체 스펙(인바디)과 가변형 생체 신호(바이탈 데이터)를 결합하여 당일 수행 가능한 최적의 운동 조합, 운동 강도 및 추천 시간을 실시간으로 연산해 줍니다.
 
+##스크린샷
+
+<img width="586" height="917" alt="스크린샷 2026-07-11 162639" src="https://github.com/user-attachments/assets/b05a4869-9004-4e64-a2b0-46530616627e" />
+<img width="575" height="905" alt="스크린샷 2026-07-11 162656" src="https://github.com/user-attachments/assets/428cec8a-173c-41da-b755-286cc78578e2" />
+<img width="557" height="900" alt="스크린샷 2026-07-11 162707" src="https://github.com/user-attachments/assets/1efbb096-b2bf-4eb1-9a78-b40f2ddb6937" />
+<img width="557" height="900" alt="스크린샷 2026-07-11 162724" src="https://github.com/user-attachments/assets/e01c0bc2-2d91-441b-88a9-077b3970f1be" />
+<img width="551" height="898" alt="스크린샷 2026-07-11 162742" src="https://github.com/user-attachments/assets/ca558e32-d9b0-45ae-b116-c85a6b227771" />
+<img width="570" height="902" alt="스크린샷 2026-07-11 162803" src="https://github.com/user-attachments/assets/9506bfa9-94ba-4aa9-9058-8359c721ae9b" />
+<img width="576" height="911" alt="스크린샷 2026-07-11 162816" src="https://github.com/user-attachments/assets/855d2c6e-a613-4292-9b6d-43d299691b75" />
+
+
 📱 서비스 핵심 아키텍처 및 화면 흐름
 
 애플리케이션은 사용자의 피로도와 접근성을 고려해 하단 탭 내비게이션 바 형식의 직관적인 디자인을 적용했습니다.
@@ -142,12 +153,3 @@ Front-end: HTML5, Tailwind CSS (CDN), Vanilla JavaScript (ES6+)
 
 또는 다음과 같이 가벼운 로컬 개발 서버를 실행하여 스마트폰에서 실시간 테스트 환경을 구성할 수 있습니다:
 
-##스크린샷
-
-<img width="586" height="917" alt="스크린샷 2026-07-11 162639" src="https://github.com/user-attachments/assets/b05a4869-9004-4e64-a2b0-46530616627e" />
-<img width="575" height="905" alt="스크린샷 2026-07-11 162656" src="https://github.com/user-attachments/assets/428cec8a-173c-41da-b755-286cc78578e2" />
-<img width="557" height="900" alt="스크린샷 2026-07-11 162707" src="https://github.com/user-attachments/assets/1efbb096-b2bf-4eb1-9a78-b40f2ddb6937" />
-<img width="557" height="900" alt="스크린샷 2026-07-11 162724" src="https://github.com/user-attachments/assets/e01c0bc2-2d91-441b-88a9-077b3970f1be" />
-<img width="551" height="898" alt="스크린샷 2026-07-11 162742" src="https://github.com/user-attachments/assets/ca558e32-d9b0-45ae-b116-c85a6b227771" />
-<img width="570" height="902" alt="스크린샷 2026-07-11 162803" src="https://github.com/user-attachments/assets/9506bfa9-94ba-4aa9-9058-8359c721ae9b" />
-<img width="576" height="911" alt="스크린샷 2026-07-11 162816" src="https://github.com/user-attachments/assets/855d2c6e-a613-4292-9b6d-43d299691b75" />
